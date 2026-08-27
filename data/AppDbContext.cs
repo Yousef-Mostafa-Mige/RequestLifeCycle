@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RequestLifeCycle.Enitities;
+using RequestLifeCycle.Entities;
 
 namespace RequestLifeCycle.data
 {
@@ -14,23 +15,22 @@ namespace RequestLifeCycle.data
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<RepairShop>()
-                .HasOne(o => o.User)
-                .WithOne(oi => oi.RepairShop)
-                .HasForeignKey<RepairShop>(o => o.UserId);
-            modelBuilder.Entity<RequestOffer>()
-                .HasOne(o => o.ServiceRequest)
-                .WithMany(oi => oi.requestOffers)
-                .HasForeignKey(o => o.ServiceRequestId);
-            modelBuilder.Entity<RequestOffer>()
-                .HasOne(o => o.RepairShop)
-                .WithMany(oi => oi.requestOffers)
-                .HasForeignKey(o => o.RepairShopId);
             modelBuilder.Entity<ServiceRequest>()
-                .HasOne(o => o.Customer)
-                .WithMany(oi => oi.servicerequest)
-                .HasForeignKey(o => o.CustomerId);
+        .Property(r => r.Status)
+        .HasConversion<string>();
+
+            modelBuilder.Entity<RequestOffer>()
+                .Property(o => o.Status)
+                .HasConversion<string>();
+
+            // تحديد دقة الـ decimal لميوز بافعل في MySQL
+            modelBuilder.Entity<ServiceRequest>()
+                .Property(r => r.ProposedPrice)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<RequestOffer>()
+                .Property(o => o.OfferedPrice)
+                .HasPrecision(18, 2);
         }
     }
 }

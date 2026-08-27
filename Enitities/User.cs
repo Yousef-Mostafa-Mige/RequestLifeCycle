@@ -1,3 +1,4 @@
+using RequestLifeCycle.Entities;
 using RequestLifeCycle.Enums;
 
 namespace RequestLifeCycle.Enitities

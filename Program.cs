@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RequestLifeCycle.data;
+using RequestLifeCycle.services;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddScoped<IRequestOfferService, RequestOfferService>();
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
+builder.Services.AddControllers();
 builder.Services.AddAuthentication(
     JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -48,6 +52,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+app.UseAuthentication();
+app.UseAuthorization();
 
+app.MapControllers();
 
 app.Run();

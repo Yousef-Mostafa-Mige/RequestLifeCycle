@@ -1,4 +1,3 @@
-using Ecommerceapi.Dtos.UserDtos;
 using RequestLifeCycle.Dtos.Token;
 using RequestLifeCycle.Dtos.UserDto;
 namespace RequestLifeCycle.services
@@ -7,5 +6,6 @@ namespace RequestLifeCycle.services
     {
        public Task<UserResponseDto> register (RegisterRequestDto request) ; 
        public Task<ResponceToken> login (LoginRequestDto request) ; 
+       Task<ResponceToken?> RefreshTokenAsync(string refreshToken);
     }
 }

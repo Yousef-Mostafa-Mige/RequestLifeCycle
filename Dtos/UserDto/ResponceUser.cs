@@ -1,4 +1,4 @@
-namespace Ecommerceapi.Dtos.UserDtos
+namespace RequestLifeCycle.Dtos.UserDto
 {
 
 public class UserResponseDto

@@ -5,10 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using RequestLifeCycle.data;
 using RequestLifeCycle.services;
 using Scalar.AspNetCore;
+using services.CashingServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMemoryCache();
-// builder.Services.AddScoped<Caching, RequestOfferService>();
+builder.Services.AddScoped<ICaching, AppCashing>();
 builder.Services.AddScoped<IRequestOfferService, RequestOfferService>();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();

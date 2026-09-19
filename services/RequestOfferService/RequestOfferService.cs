@@ -4,22 +4,18 @@ using RequestLifeCycle.DTOs.RequestOffer;
 using RequestLifeCycle.Entities;
 using RequestLifeCycle.Enums;
 using RequestLifeCycle.services;
+using services.CashingServices;
 
 namespace RequestLifeCycle.services
 {
-    public class RequestOfferService : IRequestOfferService
+    public class RequestOfferService(AppDbContext Context, ICaching CachingService) : IRequestOfferService
     {
-        private readonly AppDbContext _context;
-
-        public RequestOfferService(AppDbContext context)
-        {
-            _context = context;
-        }
+        
 
         public async Task<OfferResponseDto> CreateOfferAsync(int userId, CreateOfferDto dto)
         {
             // 1. Fetch RepairShop associated with current authenticated user
-            var repairShop = await _context.RepairShops
+            var repairShop = await Context.RepairShops
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.UserId == userId);
 
@@ -27,7 +23,7 @@ namespace RequestLifeCycle.services
                 throw new KeyNotFoundException("بيانات محل الصيانة غير موجودة لهذا المستخدم.");
 
             // 2. Verify ServiceRequest existence and status
-            var request = await _context.ServiceRequests
+            var request = await Context.ServiceRequests
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == dto.ServiceRequestId);
 
@@ -38,7 +34,7 @@ namespace RequestLifeCycle.services
                 throw new InvalidOperationException("لا يمكن تقديم عرض على طلب ليس في حالة Pending.");
 
             // 3. Ensure repair shop hasn't submitted an offer for this request before
-            bool alreadyOffered = await _context.RequestOffers
+            bool alreadyOffered = await Context.RequestOffers
                 .AnyAsync(o => o.ServiceRequestId == dto.ServiceRequestId && o.RepairShopId == repairShop.Id);
 
             if (alreadyOffered)
@@ -55,9 +51,9 @@ namespace RequestLifeCycle.services
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.RequestOffers.Add(offer);
-            await _context.SaveChangesAsync();
-
+            Context.RequestOffers.Add(offer);
+            await Context.SaveChangesAsync();
+            await CachingService.RemoveAsync($"offers_request_{dto.ServiceRequestId}");
             return new OfferResponseDto
             {
                 Id = offer.Id,
@@ -71,10 +67,10 @@ namespace RequestLifeCycle.services
             };
         }
 
-        public async Task<IEnumerable<OfferResponseDto>> GetOffersForRequestAsync(int requestId, int customerId)
+        public async Task<List<OfferResponseDto>> GetOffersForRequestAsync(int requestId, int customerId)
         {
             // 1. Verify Ownership of Request
-            var request = await _context.ServiceRequests
+            var request = await Context.ServiceRequests
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
@@ -83,9 +79,15 @@ namespace RequestLifeCycle.services
 
             if (request.CustomerId != customerId)
                 throw new UnauthorizedAccessException("غير مصرح لك برؤية العروض الخاصة بهذا الطلب.");
-
+            var cacheKey = $"offers_request_{requestId}";
+            var offers = await CachingService.GetOrCreateAsync(cacheKey, fetchFunction: () => FetchOffersFromDbAsync(requestId));
             // 2. Projection & Read
-            return await _context.RequestOffers
+            return offers;
+        }
+
+        private async Task<List<OfferResponseDto>> FetchOffersFromDbAsync(int requestId)
+        {
+            return await Context.RequestOffers
                 .AsNoTracking()
                 .Where(o => o.ServiceRequestId == requestId)
                 .OrderBy(o => o.OfferedPrice)
@@ -105,8 +107,7 @@ namespace RequestLifeCycle.services
 
         public async Task AcceptOfferAsync(int offerId, int customerId)
         {
-            // 1. Load offer with parent ServiceRequest
-            var selectedOffer = await _context.RequestOffers
+            var selectedOffer = await Context.RequestOffers
                 .Include(o => o.ServiceRequest)
                 .FirstOrDefaultAsync(o => o.Id == offerId);
 
@@ -115,7 +116,6 @@ namespace RequestLifeCycle.services
 
             var request = selectedOffer.ServiceRequest;
 
-            // 2. Verification Rules
             if (request.CustomerId != customerId)
                 throw new UnauthorizedAccessException("لا يمكنك قبول عرض لطلب لا تملكه.");
 
@@ -125,23 +125,19 @@ namespace RequestLifeCycle.services
             if (selectedOffer.Status != OfferStatus.Pending)
                 throw new InvalidOperationException("هذا العرض لم يعد متاحًا للقبول.");
 
-            // 3. Database Transaction execution
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            using var transaction = await Context.Database.BeginTransactionAsync();
             try
             {
-                // Accept chosen offer
                 selectedOffer.Status = OfferStatus.Accepted;
 
-                // Bulk update all remaining pending offers to Rejected in database directly
-                await _context.RequestOffers
+                await Context.RequestOffers
                     .Where(o => o.ServiceRequestId == request.Id && o.Id != offerId && o.Status == OfferStatus.Pending)
                     .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OfferStatus.Rejected));
-
-                // Update request status
                 request.Status = RequestStatus.Accepted;
 
-                await _context.SaveChangesAsync();
+                await Context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                await CachingService.RemoveAsync($"offers_request_{request.Id}");
             }
             catch
             {
@@ -149,5 +145,7 @@ namespace RequestLifeCycle.services
                 throw;
             }
         }
+
+          
     }
 }

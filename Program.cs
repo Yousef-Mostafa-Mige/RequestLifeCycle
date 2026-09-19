@@ -7,6 +7,8 @@ using RequestLifeCycle.services;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMemoryCache();
+// builder.Services.AddScoped<Caching, RequestOfferService>();
 builder.Services.AddScoped<IRequestOfferService, RequestOfferService>();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();

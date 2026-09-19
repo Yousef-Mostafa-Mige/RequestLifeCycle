@@ -3,17 +3,13 @@ using RequestLifeCycle.data;
 using RequestLifeCycle.DTOs.ServiceRequest;
 using RequestLifeCycle.Entities;
 using RequestLifeCycle.Enums;
+using services.CashingServices;
 
 namespace RequestLifeCycle.services
 {
-    public class ServiceRequestService : IServiceRequestService
+    public class ServiceRequestService(AppDbContext _context, ICaching cachingService) : IServiceRequestService
     {
-        private readonly AppDbContext _context;
 
-        public ServiceRequestService(AppDbContext context)
-        {
-            _context = context;
-        }
 
         public async Task<ServiceRequestResponseDto> CreateRequestAsync(int customerId, CreateServiceRequestDto dto)
         {
@@ -28,7 +24,7 @@ namespace RequestLifeCycle.services
 
             _context.ServiceRequests.Add(request);
             await _context.SaveChangesAsync();
-
+            await cachingService.RemoveAsync($"my_requests_{customerId}");
             return new ServiceRequestResponseDto
             {
                 Id = request.Id,
@@ -41,9 +37,15 @@ namespace RequestLifeCycle.services
             };
         }
 
-        public async Task<IEnumerable<ServiceRequestResponseDto>> GetMyRequestsAsync(int customerId)
+        public async Task<List<ServiceRequestResponseDto>> GetMyRequestsAsync(int customerId)
         {
-            return await _context.ServiceRequests
+            var cacheKey = $"my_requests_{customerId}";
+            var requests = await cachingService.GetOrCreateAsync(cacheKey, fetchFunction: () => FetchRequestsFromDbAsync(customerId));
+            return requests;
+        }
+        private Task<List<ServiceRequestResponseDto>> FetchRequestsFromDbAsync(int customerId)
+        {
+            return _context.ServiceRequests
                 .AsNoTracking()
                 .Where(r => r.CustomerId == customerId)
                 .OrderByDescending(r => r.CreatedAt)
@@ -62,6 +64,14 @@ namespace RequestLifeCycle.services
         }
 
         public async Task<ServiceRequestResponseDto> GetRequestByIdAsync(int requestId, int currentUserId, string userRole)
+        {
+
+            var cacheKey = $"request_by_id_{requestId}_role_{userRole}_user_{currentUserId}";
+            var requests = await cachingService.GetOrCreateAsync(cacheKey, fetchFunction: () => FetchRequestsFromDbAsync(requestId, currentUserId, userRole));
+            return requests;
+        }
+
+        private async Task<ServiceRequestResponseDto> FetchRequestsFromDbAsync(int requestId, int currentUserId, string userRole)
         {
             var request = await _context.ServiceRequests
                 .AsNoTracking()
@@ -107,6 +117,8 @@ namespace RequestLifeCycle.services
 
             request.Status = RequestStatus.Cancelled;
             await _context.SaveChangesAsync();
-        }
+            await cachingService.RemoveAsync($"my_requests_{customerId}");
+            await cachingService.RemoveAsync($"request_by_id_{requestId}_role_Customer_user_{customerId}");
+        } 
     }
 }

@@ -19,7 +19,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Customer,Admin")]
+        [Authorize(Roles = "Shop,Admin")]
         public async Task<IActionResult> Create(CreateOfferDto dto)
         {
             int userId = GetUserIdFromClaims();

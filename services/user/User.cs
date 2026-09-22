@@ -50,7 +50,7 @@ namespace RequestLifeCycle.services
                     CreatedAt = DateTime.UtcNow
                 };
             }
-            else if (request.Role == UserType.shop)
+            else if (request.Role == UserType.Shop)
             {
                 if (string.IsNullOrWhiteSpace(request.ShopName) ||
                     string.IsNullOrWhiteSpace(request.Description) ||

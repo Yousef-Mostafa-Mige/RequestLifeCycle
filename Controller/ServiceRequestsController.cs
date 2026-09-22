@@ -18,17 +18,17 @@ namespace RequestLifeCycle.Controllers
             _requestService = requestService;
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Customer")]
+        [HttpPost("create")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> Create(CreateServiceRequestDto dto)
         {
             int customerId = GetUserIdFromClaims();
             var result = await _requestService.CreateRequestAsync(customerId, dto);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return Ok(result);
         }
 
         [HttpGet("my-requests")]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> GetMyRequests()
         {
             int customerId = GetUserIdFromClaims();
@@ -47,7 +47,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPut("{id}/cancel")]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> Cancel(int id)
         {
             int customerId = GetUserIdFromClaims();

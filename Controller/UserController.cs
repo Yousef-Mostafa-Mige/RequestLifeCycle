@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RequestLifeCycle.Dtos.UserDto;
 using RequestLifeCycle.services;
-using RequestLifeCycle.services.user;
+
 
 namespace RequestLifeCycle.Controllers
 {
@@ -24,6 +25,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             var result = await _userService.login(request);
@@ -31,6 +33,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPost("refresh-token")]
+        [AllowAnonymous]
         public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
         {
             var result = await _userService.RefreshTokenAsync(refreshToken);

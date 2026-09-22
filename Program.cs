@@ -13,6 +13,7 @@ builder.Services.AddScoped<ICaching, AppCashing>();
 builder.Services.AddScoped<IRequestOfferService, RequestOfferService>();
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
+builder.Services.AddScoped<IUser, Userservices>();
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(
     JwtBearerDefaults.AuthenticationScheme)

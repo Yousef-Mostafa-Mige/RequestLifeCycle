@@ -22,7 +22,10 @@ namespace RequestLifeCycle.data
             modelBuilder.Entity<RequestOffer>()
                 .Property(o => o.Status)
                 .HasConversion<string>();
-
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.RepairShop)
+                .WithOne(r => r.User)
+                .HasForeignKey<RepairShop>(r => r.UserId); // حددنا الـ Foreign Key بوضوح
             // تحديد دقة الـ decimal لميوز بافعل في MySQL
             modelBuilder.Entity<ServiceRequest>()
                 .Property(r => r.ProposedPrice)

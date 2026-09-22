@@ -13,7 +13,7 @@ using RequestLifeCycle.Enums;
 using RequestLifeCycle.Middleware;
 using RequestLifeCycle.Enitities;
 
-namespace RequestLifeCycle.services.user
+namespace RequestLifeCycle.services
 {
     public class Userservices(AppDbContext context, IConfiguration configuration) : IUser
     {
@@ -42,6 +42,13 @@ namespace RequestLifeCycle.services.user
             if (request.Role == UserType.Customer)
             {
                 context.users.Add(newUser);
+                await context.SaveChangesAsync();
+
+                return new UserResponseDto
+                {
+                    Username = request.Name,
+                    CreatedAt = DateTime.UtcNow
+                };
             }
             else if (request.Role == UserType.shop)
             {
@@ -143,7 +150,7 @@ namespace RequestLifeCycle.services.user
             var refreshToken = GenerateToken();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-            
+
             await context.SaveChangesAsync();
             return refreshToken;
         }

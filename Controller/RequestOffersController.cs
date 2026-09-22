@@ -19,7 +19,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "RepairShop")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> Create(CreateOfferDto dto)
         {
             int userId = GetUserIdFromClaims();
@@ -28,7 +28,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpGet("request/{requestId}")]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> GetOffersForRequest(int requestId)
         {
             int customerId = GetUserIdFromClaims();
@@ -37,7 +37,7 @@ namespace RequestLifeCycle.Controllers
         }
 
         [HttpPut("{offerId}/accept")]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = "Customer,Admin")]
         public async Task<IActionResult> Accept(int offerId)
         {
             int customerId = GetUserIdFromClaims();

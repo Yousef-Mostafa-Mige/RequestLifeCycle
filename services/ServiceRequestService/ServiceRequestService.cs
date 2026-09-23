@@ -25,9 +25,10 @@ namespace RequestLifeCycle.services
             _context.ServiceRequests.Add(request);
             await _context.SaveChangesAsync();
             await cachingService.RemoveAsync($"my_requests_{customerId}");
+            Console.WriteLine($"Generated ID: {request.id}"); // Debugging line to check the generated ID
             return new ServiceRequestResponseDto
             {
-                Id = request.Id,
+                Id = request.id,
                 CustomerId = request.CustomerId,
                 Description = request.Description,
                 ProposedPrice = request.ProposedPrice,
@@ -51,7 +52,7 @@ namespace RequestLifeCycle.services
                 .OrderByDescending(r => r.CreatedAt)
                 .Select(r => new ServiceRequestResponseDto
                 {
-                    Id = r.Id,
+                    Id = r.id,
                     CustomerId = r.CustomerId,
                     CustomerName = r.Customer.Name,
                     Description = r.Description,
@@ -75,10 +76,10 @@ namespace RequestLifeCycle.services
         {
             var request = await _context.ServiceRequests
                 .AsNoTracking()
-                .Where(r => r.Id == requestId)
+                .Where(r => r.id == requestId)
                 .Select(r => new ServiceRequestResponseDto
                 {
-                    Id = r.Id,
+                    Id = r.id,
                     CustomerId = r.CustomerId,
                     CustomerName = r.Customer.Name,
                     Description = r.Description,
@@ -102,7 +103,7 @@ namespace RequestLifeCycle.services
         public async Task CancelRequestAsync(int requestId, int customerId)
         {
             var request = await _context.ServiceRequests
-                .FirstOrDefaultAsync(r => r.Id == requestId);
+                .FirstOrDefaultAsync(r => r.id == requestId);
 
             if (request == null)
                 throw new KeyNotFoundException("الطلب غير موجود.");

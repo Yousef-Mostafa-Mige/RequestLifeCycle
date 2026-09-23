@@ -5,7 +5,7 @@ namespace RequestLifeCycle.Entities
 {
     public class ServiceRequest
     {
-        public int Id { get; set; } // تعديل id إلى Id
+        public int id { get; set; } // تعديل id إلى Id
         public int CustomerId { get; set; }
         public User Customer { get; set; } = null!;
         

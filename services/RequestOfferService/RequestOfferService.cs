@@ -25,7 +25,7 @@ namespace RequestLifeCycle.services
             // 2. Verify ServiceRequest existence and status
             var request = await Context.ServiceRequests
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == dto.ServiceRequestId);
+                .FirstOrDefaultAsync(r => r.id == dto.ServiceRequestId);
 
             if (request == null)
                 throw new KeyNotFoundException("الطلب غير موجود.");
@@ -72,7 +72,7 @@ namespace RequestLifeCycle.services
             // 1. Verify Ownership of Request
             var request = await Context.ServiceRequests
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == requestId);
+                .FirstOrDefaultAsync(r => r.id == requestId);
 
             if (request == null)
                 throw new KeyNotFoundException("الطلب غير موجود.");
@@ -131,13 +131,13 @@ namespace RequestLifeCycle.services
                 selectedOffer.Status = OfferStatus.Accepted;
 
                 await Context.RequestOffers
-                    .Where(o => o.ServiceRequestId == request.Id && o.Id != offerId && o.Status == OfferStatus.Pending)
+                    .Where(o => o.ServiceRequestId == request.id && o.Id != offerId && o.Status == OfferStatus.Pending)
                     .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OfferStatus.Rejected));
                 request.Status = RequestStatus.Accepted;
 
                 await Context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                await CachingService.RemoveAsync($"offers_request_{request.Id}");
+                await CachingService.RemoveAsync($"offers_request_{request.id}");
             }
             catch
             {

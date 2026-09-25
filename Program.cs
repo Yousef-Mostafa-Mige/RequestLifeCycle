@@ -8,7 +8,11 @@ using Scalar.AspNetCore;
 using services.CashingServices;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddMemoryCache();
+// builder.Services.AddMemoryCache();
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+});
 builder.Services.AddScoped<ICaching, AppCashing>();
 builder.Services.AddScoped<IRequestOfferService, RequestOfferService>();
 builder.Services.AddAuthorization();
